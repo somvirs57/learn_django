@@ -14,9 +14,14 @@ class Blog(models.Model):
     description = models.CharField(max_length=550)
     tags = TaggableManager()
     views = models.ManyToManyField(IpModel, related_name="post_views", blank=True)
+    likes = models.ManyToManyField(IpModel, related_name="post_likes", blank=True)
+
 
     def __str__(self):
         return self.title
 
     def total_views(self):
         return self.views.count()
+
+    def total_likes(self):
+        return self.likes.count()

@@ -1,7 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import render, reverse
 from django.views.generic import ListView,DetailView
 from .models import *
 from taggit.models import Tag
+from django.http import HttpResponseRedirect
 # Create your views here.
 class TagMixin(object):
           def get_context_data(self, **kwargs):
@@ -40,17 +41,28 @@ class PostDetailView(DetailView):
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
         context = self.get_context_data(object=self.object)
-        ip = get_client_ip(self.request)
-        print(ip)
-        if IpModel.objects.filter(ip=ip).exists():
-            print("ip already present")
-            post_id = request.GET.get('post-id')
-            print(post_id)
-            post = Blog.objects.get(pk=post_id)
-            post.views.add(IpModel.objects.get(ip=ip))
+
+        # adding like count
+        like_status = False
+        ip = get_client_ip(request)
+        if self.object.likes.filter(id=IpModel.objects.get(ip=ip).id).exists():
+            like_status = True
         else:
-            IpModel.objects.create(ip=ip)
-            post_id = request.GET.get('post-id')
-            post = Blog.objects.get(pk=post_id)
-            post.views.add(IpModel.objects.get(ip=ip))
+            like_status=False
+        context['like_status'] = like_status
+
+
         return self.render_to_response(context)
+
+
+def postLike(request, pk):
+    post_id = request.POST.get('blog-id')
+    post = Blog.objects.get(pk=post_id)
+    ip = get_client_ip(request)
+    if not IpModel.objects.filter(ip=ip).exists():
+        IpModel.objects.create(ip=ip)
+    if post.likes.filter(id=IpModel.objects.get(ip=ip).id).exists():
+        post.likes.remove(IpModel.objects.get(ip=ip))
+    else:
+        post.likes.add(IpModel.objects.get(ip=ip))
+    return HttpResponseRedirect(reverse('post_detail', args=[post_id]))

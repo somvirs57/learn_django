@@ -1,0 +1,60 @@
+html page:
+<a id="like-button" class="btn btn-primary px-4 py-1 mt-0" status="not liked"
+                  like-url="{% url 'blog:ajax_like'%}">
+                  {% if like_status %}
+                  Unlike
+                  {% else %}
+                  Like
+                  {% endif %}
+
+                  </a>
+
+
+  <script>
+                      $('#like-button').on('click', function(){
+                        var url = $('#like-button').attr('like-url');
+                        var status = $('#like-button').attr('status');
+                        var id = {{blog.id}};
+                        $.ajax({
+                           url: url,
+                           data:{
+                             'id':id,
+                             'status':status,
+                           },
+                           success: function (data) {
+                             $("#like-button").text(data.status);
+                             $("#like-button").attr('status', data.change_status)
+                           }
+                         });
+                      });
+                    </script>
+
+views.py
+def ajaxLikeView(request):
+    status = request.GET.get('status')
+    blog_id = request.GET.get('id')
+    blog = Blog.objects.get(pk=blog_id)
+    ip = get_client_ip(request)
+    if blog.likes.filter(id=IpModel.objects.get(ip=ip).id).exists():
+        blog.likes.remove(IpModel.objects.get(ip=ip))
+    else:
+        blog.likes.add(IpModel.objects.get(ip=ip))
+    if status == 'not liked':
+        data = {'status':"Like",
+                'change_status':'liked'}
+    elif status == 'liked':
+        data = {'status':"Unlike",
+                'change_status':'not liked'}
+    return JsonResponse(data)
+
+  modify the get method of detail views:
+  
+  like_status = False
+        if self.object.likes.filter(id=IpModel.objects.get(ip=ip).id).exists():
+            like_status = True
+        else:
+            like_status=False
+        context['like_status'] = like_status
+
+urls.py
+path('ajax/like/', views.ajaxLikeView, name='ajax_like'),

@@ -20,6 +20,16 @@
             <a href="{% url 'posts_by_tag' tag.slug %}">{{tag.name}}</a>
           {% endfor %}
           <a href="{% url 'post-list' %}" class="btn btn-primary">Go back</a>
+          <form action="{% url 'blog_like' pk=post.id %}" method="post">
+            {% csrf_token %}
+            <button type="submit" name="blog-id" value="{{post.id}}" class="btn btn-primary ml-3">
+              {% if like_status %}
+                  Unlike
+              {% else %}
+                  Like
+              {% endif %}
+            </button>
+          </form>
         </div>
     </div>
 
